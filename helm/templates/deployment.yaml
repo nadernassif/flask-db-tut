@@ -1,3 +1,4 @@
+{{- $environment := .Values.global.environment -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -5,18 +6,21 @@ metadata:
   labels:
     {{- include "webapp.labels" . | nindent 4 }}
 spec:
-  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
-  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   selector:
     matchLabels:
       {{- include "webapp.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+    {{- with .Values.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+    {{- end }}
       labels:
         {{- include "webapp.selectorLabels" . | nindent 8 }}
     spec:
@@ -24,36 +28,42 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "webapp.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      serviceAccountName: {{ include "webapp.serviceAccountName" . }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ include "webapp.fullname" . }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- if eq $environment "prod" }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- else }}
+          image: "{{ .Values.image.repository }}:{{ .Release.Namespace }}-latest"
+          {{ end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - name: http
-              containerPort: 5000
+            - name: {{ .Values.service.name }}
+              containerPort: {{ .Values.service.port }}
               protocol: TCP
           env:
           - name: APPLICATION_NAME
             value: {{ .Chart.Name }}
           - name: ENV
-            value: {{ .Values.environment }}
+            value: {{ $environment }}
           - name: NAMESPACE
             value: {{ .Release.Namespace }}
           - name: SERVICE_ACCOUNT
             value: {{ include "webapp.serviceAccountName" . }}
-          # livenessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: http
-          # readinessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: http
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 15
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
