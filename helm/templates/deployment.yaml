@@ -56,14 +56,6 @@ spec:
           #     port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          volumeMounts:
-            - name: config
-              mountPath: /opt/src/config
-              readOnly: true
-      volumes:
-      - name: config
-        configMap:
-          name: webapp-config
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
