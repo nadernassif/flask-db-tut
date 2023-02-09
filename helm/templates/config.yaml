@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webapp-config
+  labels:
+    {{- include "webapp.labels" . | nindent 4 }}
+data:
+  config.ini: |
+    [DEFAULT]
+    consul_uri = {{.Values.consul_uri}}
+    vault_uri = {{.Values.vault_uri}}
+immutable: true
