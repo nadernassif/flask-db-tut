@@ -60,3 +60,11 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+{{/*
+Create the ingress hostname
+*/}}
+{{- define "webapp.ingressHostname" -}}
+{{- if .Values.ingress.hostname }}
+{{- .Values.ingress.hostname }}
+{{- end }}
+{{- end }}
