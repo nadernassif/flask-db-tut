@@ -4,6 +4,7 @@
 environment: dev
 replicaCount: 1
 
+
 image:
   repository: registry.infra.ankra.cloud/public/webapp
   pullPolicy: Always
