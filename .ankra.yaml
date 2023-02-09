@@ -1,0 +1,35 @@
+stages:
+  deploy:
+  - install
+deploy:
+  target:
+    match:
+      name: ankra-test
+  variables:
+    NAMESPACE: nader
+  install:
+    secrets:
+      - ORIGIN_KEY
+    script:
+      - if [[ ! $(kubectl get secret service-key -n $NAMESPACE) ]]; then kubectl -n
+        $NAMESPACE create secret generic service-key --from-literal key=${ORIGIN_KEY};
+        fi
+      - kubectl -n $NAMESPACE apply -f https://artifact.infra.ankra.cloud/repository/ankra-install-public/manifests/origin-issuer.yaml
+    build:
+      - type: docker
+        name: public/webapp
+        tag: $COMMIT_ID
+    helm:
+    - action: add
+      name: ankra
+      url: https://registry.infra.ankra.cloud/chartrepo/charts
+      credential: harbor_global
+    - action: install
+      upgrade: true
+      chart: ./helm
+      name: webapp
+      namespace: $NAMESPACE
+      build_dependencies: true
+      extra_args:
+        - --set commonLabels='ankra.dev/external-dns: \"true\"'
+        - --set image.tag="$COMMIT_ID"
