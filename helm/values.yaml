@@ -173,5 +173,5 @@ ingress:
   ## Useful when looking for additional customization, such as using different backend
   ##
   extraRules: []
-  global:
+global:
   environment: "dev"
