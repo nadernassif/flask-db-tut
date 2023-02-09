@@ -24,6 +24,7 @@ class students(db.Model):
 
 @app.route('/')
 def show_all():
+   print("hello all")
    return render_template('show_all.html', students = students.query.all() )
 
 @app.route('/new', methods = ['GET', 'POST'])
